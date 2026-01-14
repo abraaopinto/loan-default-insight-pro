@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyd
+*.so
+*.egg-info/
+.dist-info/
+
+# Virtualenv
+.venv/
+venv/
+ENV/
+env/
+
+# OS / IDE
+.DS_Store
+.vscode/
+.idea/
+
+# Streamlit
+.streamlit/
+
+# Env
+.env
+
+# Local data cache (dataset)
+data/**/*.csv
+data/**/*.parquet
+data/**/kagglehub/**

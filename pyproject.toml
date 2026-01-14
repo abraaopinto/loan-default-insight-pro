@@ -1,0 +1,46 @@
+[tool.poetry]
+name = "loan-default-insight-pro"
+version = "0.1.0"
+description = "Interactive BI prototype for loan default analytics using public Kaggle data (Streamlit + Plotly)."
+authors = ["Abraão Pinto"]
+readme = "README.md"
+packages = [{ include = "src" }]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+pandas = "^2.2.0"
+plotly = "^5.24.0"
+streamlit = "^1.37.0"
+python-dotenv = "^1.0.1"
+kagglehub = "^0.3.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.0"
+ruff = "^0.6.0"
+taskipy = "^1.13.0"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+fix = true
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["E501"]  # manter flexibilidade para strings longas em dashboards
+
+[tool.ruff.lint.isort]
+known-first-party = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.taskipy.tasks]
+lint = "ruff check ."
+format = "ruff format ."
+test = "pytest"
+check = "task lint && task test"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
