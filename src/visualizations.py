@@ -16,7 +16,7 @@ def fig_default_rate_by_category(df_rate: pd.DataFrame, category: str) -> go.Fig
         x=category,
         y="default_rate",
         hover_data={"count": True, "default_rate": ":.2%"},
-        title=f"Taxa de Default por {category}",
+        title=f"Taxa de Default por {category} (com volume mínimo)",
     )
     fig.update_yaxes(tickformat=".0%")
     return fig
@@ -58,11 +58,32 @@ def fig_scatter_risk(df: pd.DataFrame) -> go.Figure:
         return fig
 
     fig = px.scatter(
-        df.sample(min(len(df), 5000), random_state=42),  # mantém responsivo
+        df.sample(min(len(df), 5000), random_state=42),
         x="CreditScore",
         y="LoanAmount",
         color="Default",
         hover_data=["Income", "InterestRate", "LoanPurpose", "EmploymentType", "DTIRatio"],
         title="Risco: Valor do Empréstimo vs Credit Score (amostra)",
     )
+    return fig
+
+
+def fig_driver_deltas(drivers: pd.DataFrame) -> go.Figure:
+    """
+    Bar chart: delta_pct for numeric drivers (Default=1 vs Default=0).
+    """
+    if drivers.empty:
+        fig = go.Figure()
+        fig.update_layout(title="Drivers (sem dados)")
+        return fig
+
+    top = drivers.head(10).copy()
+    fig = px.bar(
+        top,
+        x="feature",
+        y="delta_pct",
+        hover_data={"delta_pct": ":.2%","delta": ":.3f","mean_default_0": ":.3f","mean_default_1": ":.3f"},
+        title="Top 10 Drivers Numéricos — Diferença relativa (Default=1 vs Default=0)",
+    )
+    fig.update_yaxes(tickformat=".0%")
     return fig
