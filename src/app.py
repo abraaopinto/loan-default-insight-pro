@@ -6,6 +6,10 @@ from src.components.sidebar import render_filters
 from src.core.metrics import compute_kpis, compare_drivers, segment_default_rate, top_segments_multi
 from src.core.processing import apply_filters
 from src.database.loader import load_dataset
+from dotenv import load_dotenv
+import io
+import logging
+
 from src.visualizations import (
     fig_credit_score_bins,
     fig_default_rate_by_category,
@@ -23,6 +27,9 @@ def fmt_br_number(x: float) -> str:
 
 
 def main() -> None:
+    load_dotenv()
+    logging.basicConfig(level=logging.INFO)
+
     st.set_page_config(page_title="Loan Default Insight Pro", layout="wide")
     st.title("Loan Default Insight Pro")
     st.caption("Prototype (Streamlit + Plotly) — Kaggle: nikhil1e9/loan-default")
@@ -140,6 +147,7 @@ def main() -> None:
     with tabs[3]:
         st.subheader("Exportação")
         st.caption("Baixe o dataset filtrado para análises externas ou anexos do Pitch.")
+
         csv_bytes = df_f.to_csv(index=False).encode("utf-8")
         st.download_button(
             label="Baixar CSV filtrado",
@@ -147,8 +155,24 @@ def main() -> None:
             file_name="loan_default_filtered.csv",
             mime="text/csv",
         )
+
+        # Excel export
+        xlsx_buffer = io.BytesIO()
+        df_f.to_excel(xlsx_buffer, index=False, sheet_name="filtered")
+        st.download_button(
+            label="Baixar Excel filtrado",
+            data=xlsx_buffer.getvalue(),
+            file_name="loan_default_filtered.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+
         with st.expander("Prévia dos dados filtrados"):
-            st.dataframe(df_f.head(50), use_container_width=True)
+            preview = df_f.head(50).copy()
+            # Minimização: não exibir LoanID por padrão
+            if "LoanID" in preview.columns:
+                preview = preview.drop(columns=["LoanID"])
+            st.dataframe(preview, use_container_width=True)
+
 
     # -------------------- Narrativa para o Pitch
     with tabs[4]:
