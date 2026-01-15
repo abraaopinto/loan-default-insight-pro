@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+import logging
 import os
+import time
 from pathlib import Path
 from typing import Iterable
 
 import pandas as pd
 import streamlit as st
 
+logger = logging.getLogger(__name__)
 
 REQUIRED_COLUMNS: list[str] = [
     "LoanID",
@@ -29,13 +32,15 @@ REQUIRED_COLUMNS: list[str] = [
     "Default",
 ]
 
+
 def get_data_dir() -> Path:
-    env_val = os.getenv("DATA_DIR")
-    if env_val:
-        return Path(env_val).resolve()
-    
-    # Se não houver variável de ambiente, usa o padrão ./data
-    return Path("./data/datasets/nikhil1e9/loan-default/versions/2/").resolve()
+    """
+    Resolve the local data directory.
+    Priority:
+      1) DATA_DIR env (from .env)
+      2) ./data
+    """
+    return Path(os.getenv("DATA_DIR", "data")).resolve()
 
 
 def _validate_schema(df: pd.DataFrame, required: Iterable[str]) -> None:
@@ -44,61 +49,83 @@ def _validate_schema(df: pd.DataFrame, required: Iterable[str]) -> None:
         raise ValueError(f"Dataset schema mismatch. Missing columns: {missing}")
 
 
-def _ensure_dataset_file(data_dir: Path, filename: str) -> Path:
+def normalize_binary_yes_no(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Ensure the CSV exists under data_dir. If not found, attempts KaggleHub download.
+    Normalize Yes/No columns to 1/0.
     """
-    csv_path = data_dir / filename
-    if csv_path.exists():
-        return csv_path
+    yn_map = {"Yes": 1, "No": 0}
+    for col in ["HasMortgage", "HasDependents", "HasCoSigner"]:
+        df[col] = df[col].astype(str).str.strip().map(yn_map)
 
-    # Attempt KaggleHub download (optional)
-    try:
-        import kagglehub  # local import to keep module import fast
+        # Fail-fast if unexpected values exist
+        if df[col].isna().any():
+            raise ValueError(
+                f"Unexpected values in {col}. Expected only Yes/No. "
+                "Tip: inspect raw values with df[col].value_counts()."
+            )
+        df[col] = df[col].astype(int)
 
-        # Align KaggleHub cache to your data directory (same approach you described)
-        os.environ.setdefault("KAGGLEHUB_CACHE", str(data_dir))
+    return df
 
-        kagglehub.dataset_download("nikhil1e9/loan-default")
-    except Exception as exc:
+
+def _find_csv(data_dir: Path, filename: str) -> Path | None:
+    direct = data_dir / filename
+    if direct.exists():
+        return direct
+
+    target = filename.lower()
+    for p in data_dir.rglob("*.csv"):
+        if p.name.lower() == target:
+            return p
+    return None
+
+
+def _ensure_csv_exists(data_dir: Path, filename: str) -> Path:
+    data_dir.mkdir(parents=True, exist_ok=True)
+
+    found = _find_csv(data_dir, filename)
+    if found:
+        return found
+
+    # KaggleHub download only if explicitly enabled (corporate SSL may block it)
+    if os.getenv("USE_KAGGLEHUB_DOWNLOAD", "0") != "1":
         raise FileNotFoundError(
-            f"Could not find '{filename}' in {data_dir}. "
-            "Also failed to download via KaggleHub. "
-            f"Original error: {exc}"
-        ) from exc
-
-    if not csv_path.exists():
-        raise FileNotFoundError(
-            f"KaggleHub download completed but '{filename}' is still not present in {data_dir}."
+            f"Could not find '{filename}' under {data_dir}. "
+            "Place the file at data/Loan_default.csv or set DATA_DIR accordingly. "
+            "If you want runtime download, set USE_KAGGLEHUB_DOWNLOAD=1."
         )
 
-    return csv_path
+    import kagglehub  # local import
+
+    os.environ.setdefault("KAGGLEHUB_CACHE", str(data_dir))
+    kagglehub.dataset_download("nikhil1e9/loan-default")
+
+    found = _find_csv(data_dir, filename)
+    if not found:
+        raise FileNotFoundError(
+            f"KaggleHub finished but '{filename}' still not found under {data_dir}."
+        )
+    return found
 
 
 @st.cache_data(show_spinner="Carregando dataset...")
 def load_dataset(filename: str = "Loan_default.csv") -> pd.DataFrame:
     """
-    Load dataset with Streamlit cache, validating expected columns.
+    Load dataset with Streamlit cache, logging essential metadata.
     """
+    t0 = time.perf_counter()
     data_dir = get_data_dir()
-    data_dir.mkdir(parents=True, exist_ok=True)
+    csv_path = _ensure_csv_exists(data_dir, filename)
 
-    csv_path = _ensure_dataset_file(data_dir, filename)
-
+    logger.info("Loading dataset from: %s", csv_path)
     df = pd.read_csv(csv_path)
-    # Normalize Yes/No -> 1/0 for binary columns (dataset uses strings)
-    yn_map = {"Yes": 1, "No": 0}
-    for col in ["HasMortgage", "HasDependents", "HasCoSigner"]:
-        df[col] = (
-            df[col]
-            .astype(str)
-            .str.strip()
-            .map(yn_map)
-            .astype(int)
-        )
+
+    df = normalize_binary_yes_no(df)
     _validate_schema(df, REQUIRED_COLUMNS)
 
-    # Normalize dtypes (light-touch, safe)
     df["Default"] = df["Default"].astype(int)
+
+    dt = time.perf_counter() - t0
+    logger.info("Loaded dataset: shape=%s, seconds=%.3f", df.shape, dt)
 
     return df
