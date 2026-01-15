@@ -27,3 +27,4 @@ env/
 data/**/*.csv
 data/**/*.parquet
 data/**/kagglehub/**
+data/datasets/**

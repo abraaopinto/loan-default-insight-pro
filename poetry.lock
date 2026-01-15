@@ -361,17 +361,18 @@ referencing = ">=0.31.0"
 
 [[package]]
 name = "kagglehub"
-version = "0.3.13"
+version = "0.4.0"
 description = "Access Kaggle resources anywhere"
 optional = false
-python-versions = ">=3.9"
+python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "kagglehub-0.3.13-py3-none-any.whl", hash = "sha256:e00dec8b81396cbad9c7b5eb62a33cf8ae27da26227abd196ed8f054c845ca00"},
-    {file = "kagglehub-0.3.13.tar.gz", hash = "sha256:d3c8b6250627d665096cd91a9487559bf5ed61be607eaf63d14511b20eea646e"},
+    {file = "kagglehub-0.4.0-py3-none-any.whl", hash = "sha256:1ba266dd87fe4934eb4de1a2ecfd10cc190228733e6d7852c04ba899adb02c67"},
+    {file = "kagglehub-0.4.0.tar.gz", hash = "sha256:abed91c5b4736996f242f9ca4fc3bdf4d97b11c8b5a0a636ffb02db219a11b12"},
 ]
 
 [package.dependencies]
+kagglesdk = ">=0.1.14,<1.0"
 packaging = "*"
 pyyaml = "*"
 requests = "*"
@@ -382,6 +383,22 @@ hf-datasets = ["datasets", "pandas"]
 pandas-datasets = ["pandas"]
 polars-datasets = ["polars"]
 signing = ["betterproto (>=2.0.0b6)", "model-signing", "sigstore (>=3.6.1)"]
+
+[[package]]
+name = "kagglesdk"
+version = "0.1.14"
+description = "Bindings to access kaggle's external-facing APIs"
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "kagglesdk-0.1.14-py3-none-any.whl", hash = "sha256:a06feff062d8a1344ca7d378bfccdee4fd6b0b1b4e236fdafe23fefb730ee17f"},
+    {file = "kagglesdk-0.1.14.tar.gz", hash = "sha256:ac37d7d7fcb9cf92d37319ec65b433686ca5c2f0f28a434a1104855a5f9c24cc"},
+]
+
+[package.dependencies]
+protobuf = "*"
+requests = "*"
 
 [[package]]
 name = "markupsafe"
@@ -1435,20 +1452,20 @@ files = [
 
 [[package]]
 name = "streamlit"
-version = "1.52.2"
+version = "1.53.0"
 description = "A faster way to build and share data apps"
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "streamlit-1.52.2-py3-none-any.whl", hash = "sha256:a16bb4fbc9781e173ce9dfbd8ffb189c174f148f9ca4fb8fa56423e84e193fc8"},
-    {file = "streamlit-1.52.2.tar.gz", hash = "sha256:64a4dda8bc5cdd37bfd490e93bb53da35aaef946fcfc283a7980dacdf165108b"},
+    {file = "streamlit-1.53.0-py3-none-any.whl", hash = "sha256:e8b65210bd1a785d121340b794a47c7c912d8da401af9e4403e16c84e3bc4410"},
+    {file = "streamlit-1.53.0.tar.gz", hash = "sha256:0114116d34589f2e652bf4ac735a3aca69807e659f92f99c98e7b620d000838f"},
 ]
 
 [package.dependencies]
 altair = ">=4.0,<5.4.0 || >5.4.0,<5.4.1 || >5.4.1,<7"
 blinker = ">=1.5.0,<2"
-cachetools = ">=4.0,<7"
+cachetools = ">=5.5,<7"
 click = ">=7.0,<9"
 gitpython = ">=3.0.7,<3.1.19 || >3.1.19,<4"
 numpy = ">=1.23,<3"
@@ -1462,7 +1479,7 @@ requests = ">=2.27,<3"
 tenacity = ">=8.1.0,<10"
 toml = ">=0.10.1,<2"
 tornado = ">=6.0.3,<6.5.0 || >6.5.0,<7"
-typing-extensions = ">=4.4.0,<5"
+typing-extensions = ">=4.10.0,<5"
 watchdog = {version = ">=2.1.5,<7", markers = "platform_system != \"Darwin\""}
 
 [package.extras]
@@ -1470,9 +1487,10 @@ all = ["rich (>=11.0.0)", "streamlit[auth,charts,pdf,performance,snowflake,sql]"
 auth = ["Authlib (>=1.3.2)"]
 charts = ["graphviz (>=0.19.0)", "matplotlib (>=3.0.0)", "orjson (>=3.5.0)", "plotly (>=4.0.0)"]
 pdf = ["streamlit-pdf (>=1.0.0)"]
-performance = ["orjson (>=3.5.0)", "uvloop (>=0.15.2) ; sys_platform != \"win32\" and sys_platform != \"cygwin\" and platform_python_implementation != \"PyPy\""]
+performance = ["httptools (>=0.6.3)", "orjson (>=3.5.0)", "uvloop (>=0.15.2) ; sys_platform != \"win32\" and sys_platform != \"cygwin\" and platform_python_implementation != \"PyPy\""]
 snowflake = ["snowflake-connector-python (>=3.3.0) ; python_version < \"3.12\"", "snowflake-snowpark-python[modin] (>=1.17.0) ; python_version < \"3.12\""]
 sql = ["SQLAlchemy (>=2.0.0)"]
+starlette = ["anyio (>=4.0.0)", "itsdangerous (>=2.1.2)", "python-multipart (>=0.0.10)", "starlette (>=0.40.0)", "uvicorn (>=0.30.0)", "websockets (>=12.0.0)"]
 
 [[package]]
 name = "taskipy"
@@ -1711,4 +1729,4 @@ watchmedo = ["PyYAML (>=3.10)"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "00db5a8c758180eccc262550814d6b8eb47208d6e12abb723d535a35f0b21f13"
+content-hash = "76b1942334821d3e6ebad5ec1f5b7ee07b9b2d6f09c75dde6c44f95f20a1f514"
