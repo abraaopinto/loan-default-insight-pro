@@ -57,11 +57,11 @@ def main() -> None:
     # ---- KPIs
     kpis = compute_kpis(df_f)
     c1, c2, c3, c4, c5 = st.columns(5)
-    c1.metric("Operações", f"{kpis['total_loans']:,}".replace(",", "."))
-    c2.metric("Taxa de Default", f"{kpis['default_rate']:.2%}")
-    c3.metric("Ticket Médio", fmt_br_number(kpis["avg_loan_amount"]))
-    c4.metric("Credit Score Médio", f"{kpis['avg_credit_score']:.1f}")
-    c5.metric("Juros Médio", f"{kpis['avg_interest_rate']:.2f}%")
+    c1.metric("Operações", f"{kpis['total_loans']:,}".replace(",", "."), border=True,)
+    c2.metric("Taxa de Default", f"{kpis['default_rate']:.2%}",border=True,)
+    c3.metric("Ticket Médio", fmt_br_number(kpis["avg_loan_amount"]),border=True,)
+    c4.metric("Credit Score Médio", f"{kpis['avg_credit_score']:.1f}",border=True,)
+    c5.metric("Juros Médio", f"{kpis['avg_interest_rate']:.2f}%",border=True,)
 
     st.divider()
 
@@ -76,22 +76,28 @@ def main() -> None:
             rate_purpose = segment_default_rate(df_f, "LoanPurpose", min_count=200)
             st.plotly_chart(
                 fig_default_rate_by_category(rate_purpose, "LoanPurpose"),
-                use_container_width=True,
+                width='stretch',
                 key="vg_default_by_purpose",
             )
 
         with right:
             st.plotly_chart(
                 fig_credit_score_bins(df_f),
-                use_container_width=True,
+                width='stretch',
                 key="vg_credit_score_bins",
             )
 
         st.plotly_chart(
             fig_scatter_risk(df_f),
-            use_container_width=True,
+            width='stretch',
             key="vg_scatter_risk",
         )
+        with st.expander("Qualidade do dado (auditoria rápida)"):
+            cols = ["Age", "Income", "LoanAmount", "CreditScore", "InterestRate", "DTIRatio", "Default"]
+            nulls = df_f[cols].isna().mean().sort_values(ascending=False)
+            st.write("Percentual de nulos (colunas-chave):")
+            st.dataframe((nulls * 100).round(2).rename("null_%"))
+
 
     # -------------------- Insights
     with tabs[1]:
@@ -112,7 +118,14 @@ def main() -> None:
                 else:
                     view = seg.copy()
                     view["default_rate"] = view["default_rate"].map(lambda x: f"{x:.2%}")
-                    st.dataframe(view, use_container_width=True)
+                    st.dataframe(view, width='stretch')
+        
+        with st.container(border=True):
+            top = seg.iloc[0]
+            st.success(
+                f"Maior risco em {dim}: {top[dim]} — default {top['default_rate']:.2%} (n={int(top['count'])})"
+            )
+
 
     # -------------------- Risk Explorer
     with tabs[2]:
@@ -125,7 +138,7 @@ def main() -> None:
         seg = segment_default_rate(df_f, dim, min_count=min_count)
         st.plotly_chart(
             fig_default_rate_by_category(seg, dim),
-            use_container_width=True,
+            width='stretch',
             key=f"re_default_by_{dim}",
         )
 
@@ -133,7 +146,7 @@ def main() -> None:
         drivers = compare_drivers(df_f, NUMERIC_DRIVERS)
         st.plotly_chart(
             fig_driver_deltas(drivers),
-            use_container_width=True,
+            width='stretch',
             key="re_driver_deltas",
         )
 
@@ -141,7 +154,7 @@ def main() -> None:
             if drivers.empty:
                 st.info("Sem dados suficientes para comparação.")
             else:
-                st.dataframe(drivers, use_container_width=True)
+                st.dataframe(drivers, width='stretch')
 
     # -------------------- Exportação
     with tabs[3]:
@@ -150,9 +163,10 @@ def main() -> None:
 
         csv_bytes = df_f.to_csv(index=False).encode("utf-8")
         st.download_button(
-            label="Baixar CSV filtrado",
+            label="Baixar CSV",
             data=csv_bytes,
             file_name="loan_default_filtered.csv",
+            icon=":material/download:",
             mime="text/csv",
         )
 
@@ -160,9 +174,10 @@ def main() -> None:
         xlsx_buffer = io.BytesIO()
         df_f.to_excel(xlsx_buffer, index=False, sheet_name="filtered")
         st.download_button(
-            label="Baixar Excel filtrado",
+            label="Baixar Excel",
             data=xlsx_buffer.getvalue(),
             file_name="loan_default_filtered.xlsx",
+            icon=":material/download:",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         )
 
@@ -171,7 +186,7 @@ def main() -> None:
             # Minimização: não exibir LoanID por padrão
             if "LoanID" in preview.columns:
                 preview = preview.drop(columns=["LoanID"])
-            st.dataframe(preview, use_container_width=True)
+            st.dataframe(preview, width='stretch')
 
 
     # -------------------- Narrativa para o Pitch
@@ -205,6 +220,16 @@ com base em evidências, não apenas em percepções.
 - integração com pipeline de dados e camada de governança.
 """
         )
+        with st.expander("Transparência, limitações e uso responsável"):
+            st.markdown(
+                """
+        - **Fonte**: dataset público do Kaggle (loan-default).  
+        - **Limitações**: análise exploratória; correlação não implica causalidade.  
+        - **Risco de viés**: variáveis como escolaridade/emprego podem refletir fatores socioeconômicos; evitar interpretações determinísticas.  
+        - **Uso**: insights devem orientar políticas e monitoramento, não decisões individuais automáticas sem governança.  
+        """
+            )
+
 
 
 if __name__ == "__main__":
