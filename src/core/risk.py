@@ -38,3 +38,13 @@ def compute_value_at_risk(df: pd.DataFrame, risk_score: pd.Series) -> float:
     Value at risk proxy: sum(LoanAmount * risk_score)
     """
     return float((df["LoanAmount"].astype(float) * risk_score).sum())
+
+def classify_risk_band(risk_score: pd.Series) -> pd.Series:
+    """
+    Textual risk bands (accessible, not color-dependent).
+    """
+    return pd.cut(
+        risk_score,
+        bins=[-0.001, 0.33, 0.66, 1.001],
+        labels=["Neutro", "Alerta", "Crítico"],
+    ).astype(str)
