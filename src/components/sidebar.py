@@ -7,94 +7,57 @@ import streamlit as st
 
 
 @dataclass(frozen=True)
-class Filters:
-    age_range: tuple[int, int]
+class SmartFilters:
     income_range: tuple[float, float]
-    loan_amount_range: tuple[float, float]
-    credit_score_range: tuple[int, int]
-    interest_rate_range: tuple[float, float]
-    dti_range: tuple[float, float]
-    education: list[str]
-    employment_type: list[str]
-    marital_status: list[str]
-    has_mortgage: list[int]
-    has_dependents: list[int]
     loan_purpose: list[str]
-    has_cosigner: list[int]
-    default: list[int]
+    employment_type: list[str]
 
 
 def _minmax(series: pd.Series) -> tuple[float, float]:
     return float(series.min()), float(series.max())
 
 
-def render_filters(df: pd.DataFrame) -> Filters:
+def render_smart_filters(df: pd.DataFrame) -> SmartFilters:
+    """
+    Smart + persistent filters (session_state).
+    """
     with st.sidebar:
-        st.header("Filtros")
-
-        # Numeric ranges
-        age_min, age_max = int(df["Age"].min()), int(df["Age"].max())
-        cs_min, cs_max = int(df["CreditScore"].min()), int(df["CreditScore"].max())
+        st.header("Filtros (simulação rápida)")
 
         inc_min, inc_max = _minmax(df["Income"])
-        la_min, la_max = _minmax(df["LoanAmount"])
-        ir_min, ir_max = _minmax(df["InterestRate"])
-        dti_min, dti_max = _minmax(df["DTIRatio"])
 
-        age_range = st.slider("Idade", min_value=age_min, max_value=age_max, value=(age_min, age_max))
+        # Persistência via session_state
+        if "income_range" not in st.session_state:
+            st.session_state["income_range"] = (inc_min, inc_max)
+        if "loan_purpose" not in st.session_state:
+            st.session_state["loan_purpose"] = []
+        if "employment_type" not in st.session_state:
+            st.session_state["employment_type"] = []
+
         income_range = st.slider(
-            "Renda (Income)", min_value=inc_min, max_value=inc_max, value=(inc_min, inc_max)
-        )
-        loan_amount_range = st.slider(
-            "Valor do empréstimo (LoanAmount)",
-            min_value=la_min,
-            max_value=la_max,
-            value=(la_min, la_max),
-        )
-        credit_score_range = st.slider(
-            "Credit Score", min_value=cs_min, max_value=cs_max, value=(cs_min, cs_max)
-        )
-        interest_rate_range = st.slider(
-            "Taxa de juros (InterestRate)",
-            min_value=ir_min,
-            max_value=ir_max,
-            value=(ir_min, ir_max),
-        )
-        dti_range = st.slider(
-            "DTI Ratio (DTIRatio)", min_value=dti_min, max_value=dti_max, value=(dti_min, dti_max)
+            "Faixa de renda (Income)",
+            min_value=inc_min,
+            max_value=inc_max,
+            value=st.session_state["income_range"],
+            key="income_range",
         )
 
-        # Categorical filters
-        education = st.multiselect("Education", sorted(df["Education"].dropna().unique().tolist()), default=[])
-        employment_type = st.multiselect(
-            "EmploymentType", sorted(df["EmploymentType"].dropna().unique().tolist()), default=[]
-        )
-        marital_status = st.multiselect(
-            "MaritalStatus", sorted(df["MaritalStatus"].dropna().unique().tolist()), default=[]
-        )
         loan_purpose = st.multiselect(
-            "LoanPurpose", sorted(df["LoanPurpose"].dropna().unique().tolist()), default=[]
+            "Finalidade (LoanPurpose)",
+            sorted(df["LoanPurpose"].dropna().unique().tolist()),
+            default=st.session_state["loan_purpose"],
+            key="loan_purpose",
         )
 
-        # Binary filters (keep as ints)
-        has_mortgage = st.multiselect("HasMortgage", [0, 1], default=[0, 1])
-        has_dependents = st.multiselect("HasDependents", [0, 1], default=[0, 1])
-        has_cosigner = st.multiselect("HasCoSigner", [0, 1], default=[0, 1])
-        default = st.multiselect("Default", [0, 1], default=[0, 1])
+        employment_type = st.multiselect(
+            "Tipo de emprego (EmploymentType)",
+            sorted(df["EmploymentType"].dropna().unique().tolist()),
+            default=st.session_state["employment_type"],
+            key="employment_type",
+        )
 
-    return Filters(
-        age_range=age_range,
+    return SmartFilters(
         income_range=income_range,
-        loan_amount_range=loan_amount_range,
-        credit_score_range=credit_score_range,
-        interest_rate_range=interest_rate_range,
-        dti_range=dti_range,
-        education=education,
-        employment_type=employment_type,
-        marital_status=marital_status,
-        has_mortgage=has_mortgage,
-        has_dependents=has_dependents,
         loan_purpose=loan_purpose,
-        has_cosigner=has_cosigner,
-        default=default,
+        employment_type=employment_type,
     )
